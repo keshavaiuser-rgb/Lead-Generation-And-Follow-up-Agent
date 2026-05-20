@@ -175,12 +175,12 @@ All four tabs share the same 11 columns:
 - **Wait duration:** Currently 2 minutes. Adjust in `Wait`, `Wait1`, `Wait2`, `Wait3` nodes.
 - **Language:** Agent replies in English or Hinglish based on user's message language.
 - **Scope:** Agent is focused exclusively on Indore, MP properties.
-
+  
 ---
 
 ## 🚀 Setup Checklist
 
-- [ ] Import `Lead_generation_Follow_up_agent.json` into n8n
+- [ ] Import `Lead_generation_Follow_up_agent.json` into n8n 
 - [ ] Connect **WhatsApp Business** credentials (Trigger + Send nodes)
 - [ ] Connect **OpenAI** credentials (or configure AI Gateway)
 - [ ] Connect **Google Sheets** OAuth account
@@ -191,10 +191,3 @@ All four tabs share the same 11 columns:
 - [ ] Adjust follow-up timer thresholds for production
 - [ ] Activate the workflow
 
----
-
-## 📁 File
-
-```
-Lead_generation_Follow_up_agent.json   ← n8n workflow export (import directly into n8n)
-```
