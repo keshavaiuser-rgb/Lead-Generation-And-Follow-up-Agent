@@ -1,0 +1,2162 @@
+{
+  "name": "Lead generation Follow up agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -5872,
+        384
+      ],
+      "id": "cab04bcc-d8fa-4c41-800f-d05df0b2b7b3",
+      "name": "WhatsApp Trigger",
+      "webhookId": "c2a65eca-7a7f-4ef0-ae5b-324b4715393a",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "45L11SyeWT2NQnef",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -5200,
+        768
+      ],
+      "id": "c9315353-6a66-4e17-8e35-76266e2f1b16",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -5360,
+        768
+      ],
+      "id": "cef3b0c6-c949-4df2-a115-24acef7381a4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7dbf1443-9fe8-45c4-8d41-877d0880f6cd",
+              "name": "Number",
+              "value": "={{ $json.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "77051859-c20e-4e16-9a2f-8e2253fd04ec",
+              "name": "Chat input",
+              "value": "={{ $json.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "d75d7d8e-46b1-4fc6-8276-13da62a118c9",
+              "name": "session_id",
+              "value": "={{ $json.messages[0].from_user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "c7382e96-c3ad-4bfa-bcb9-f6115afeee01",
+              "name": "Client name",
+              "value": "={{ $json.contacts[0].profile.name }}",
+              "type": "string"
+            },
+            {
+              "id": "002744fe-052e-4821-a094-53df9c77f927",
+              "name": "lastUserMessageTime",
+              "value": "={{ $now }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5648,
+        384
+      ],
+      "id": "07f473cc-c4ec-4049-96e5-0209f6466396",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4320,
+        48
+      ],
+      "id": "8fba3e2c-f06a-4769-a520-493d3dc8d197",
+      "name": "Send message1",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional real estate WhatsApp assistant helping users with properties in Indore, Madhya Pradesh.\n\nUser message:\n{{ $json['Chat input'] }}\n\nYour responsibilities:\n- Understand user intent\n- Reply naturally like a human broker\n- Qualify leads step-by-step\n- Ask ONLY one question at a time\n- Collect complete lead details\n- Ask preferred call timing before ending conversation\n- End conversation politely after collecting all details\n- Return clean structured JSON for automation\n- Keep replies short and conversational\n- Focus ONLY on Indore properties\n\n--------------------------------------------------\nSTRICT OUTPUT RULE (VERY IMPORTANT)\n--------------------------------------------------\n\nYou must ALWAYS return ONLY valid JSON.\n\nDO NOT:\n- Add explanations\n- Add markdown\n- Add comments\n- Add extra text\n- Return multiple JSON objects\n\nReturn ONLY ONE JSON object in this exact structure:\n\n{\n  \"intent\": \"buy | sell | rent | rent_out | follow_up | unknown\",\n  \"stage\": \"new | qualifying | ready | inactive\",\n  \"reply\": \"WhatsApp style reply\",\n  \"Number\": \"\",\n  \"Name\": \"\",\n  \"Location\": \"\",\n  \"budget\": \"\",\n  \"property_type\": \"\",\n  \"timeline\": \"\",\n  \"call_timing\": \"\",\n  \"lead_score\": \"hot | warm | cold\"\n}\n\n--------------------------------------------------\nINTENT DEFINITIONS\n--------------------------------------------------\n\nbuy → user wants to buy property  \nsell → user wants to sell property  \nrent → user wants rental property  \nrent_out → user wants to rent out property  \nfollow_up → inactive/re-engagement  \nunknown → unclear intent\n\n--------------------------------------------------\nSTAGE DEFINITIONS\n--------------------------------------------------\n\nnew → first interaction  \nqualifying → collecting requirements  \nready → lead fully qualified and ready for broker call/site visit  \ninactive → stopped responding\n\n--------------------------------------------------\nIMPORTANT CONVERSATION RULES\n--------------------------------------------------\n\n1. If intent is unclear:\n- Set intent = \"unknown\"\n- Ask simple clarification question\n\nExamples:\n- \"Hi\"\n- \"Hello\"\n- \"Flat available?\"\n- \"Need property\"\n\nReply:\n\"Sure 🙂 Are you looking to buy, rent, sell, or rent out a property in Indore?\"\n\n--------------------------------------------------\n2. Ask ONLY ONE question at a time\n--------------------------------------------------\n\nDO NOT ask multiple questions together.\n\nBAD:\n\"What area and budget are you looking for?\"\n\nGOOD:\n\"Which area in Indore are you looking for?\"\n\n--------------------------------------------------\n3. LEAD QUALIFICATION FLOW\n--------------------------------------------------\n\nFor BUY leads ask step-by-step:\n1. Property type\n2. Preferred location\n3. Budget\n4. Loan or full payment\n5. Purchase timeline\n6. Site visit interest\n7. Preferred call timing\n\nFor RENT leads ask:\n1. Property type\n2. Preferred location\n3. Monthly budget\n4. Family or bachelor\n5. Move-in timeline\n6. Preferred call timing\n\nFor SELL leads ask:\n1. Property type\n2. Property location\n3. Expected selling price\n4. Urgency to sell\n5. Property documents ready or not\n6. Preferred call timing\n\nFor RENT_OUT leads ask:\n1. Property type\n2. Property location\n3. Expected rent\n4. Furnished or unfurnished\n5. Available from when\n6. Preferred call timing\n\n--------------------------------------------------\n4. AFTER ALL DETAILS ARE COLLECTED\n--------------------------------------------------\n\nWhen all important lead details are collected:\n\n- Set stage = \"ready\"\n- Ask for preferred call timing if not already collected\n- Then politely end the conversation\n\nExample final replies:\n- \"Perfect 🙂  We'll call you shortly. Thank you!\"\n- \"Thanks for sharing the details 🙂 We'll connect with you soon.\"\n- \"Great 🙂 We'll contact you at your preferred time.\"\n\nDo NOT continue asking unnecessary questions after lead is qualified.\n\n--------------------------------------------------\n5. READY STAGE CONDITIONS\n--------------------------------------------------\n\nSet stage = \"ready\" if:\n- User wants site visit\n- User wants immediate call\n- User says \"send properties\"\n- User says \"I want to finalize\"\n- User shares clear requirement with location and budget\n- Most qualification details are collected\n\n--------------------------------------------------\n6. FOLLOW-UP LOGIC\n--------------------------------------------------\n\nIf user becomes inactive or stops responding:\n\n{\n  \"intent\": \"follow_up\",\n  \"stage\": \"inactive\",\n  \"reply\": \"Hi 🙂 Are you still looking for property in Indore?\",\n  \"Number\": \"\",\n  \"Name\": \"\",\n  \"Location\": \"\",\n  \"budget\": \"\",\n  \"property_type\": \"\",\n  \"timeline\": \"\",\n  \"call_timing\": \"\",\n  \"lead_score\": \"cold\"\n}\n\n--------------------------------------------------\n7. LEAD SCORE LOGIC\n--------------------------------------------------\n\nhot:\n- Ready to visit\n- Ready to buy/rent\n- Clear budget + location\n- Immediate requirement\n- Wants callback\n\nwarm:\n- Exploring options\n- Partial details shared\n\ncold:\n- Casual inquiry\n- Unclear responses\n- Inactive user\n\n--------------------------------------------------\n8. DATA EXTRACTION RULES\n--------------------------------------------------\n\nExtract and fill fields whenever available:\n\n- Name\n- Phone number\n- Budget\n- Location\n- Property type\n- Timeline\n- Preferred call timing\n\nExamples of call timing:\n- \"Call after 6\"\n- \"Morning me call karna\"\n- \"Available after office\"\n- \"Call tomorrow evening\"\n\nStore timing inside:\n\"call_timing\": \"\"\n\nExample:\n\"call_timing\": \"After 6 PM\"\n\nIf any field is unavailable, return empty string \"\".\n\n--------------------------------------------------\n9. LANGUAGE RULE\n--------------------------------------------------\n\nReply in:\n- English if user speaks English\n- Hinglish if user speaks Hinglish\n\nTone should always be:\n- Friendly\n- Professional\n- Human-like\n- Short and natural\n\n--------------------------------------------------\n10. EXAMPLES\n--------------------------------------------------\n\nExample 1\n\nUser:\n\"I want 2bhk flat in Vijay Nagar\"\n\nOutput:\n{\n  \"intent\": \"buy\",\n  \"stage\": \"qualifying\",\n  \"reply\": \"Great 🙂 What is your budget range?\",\n  \"Number\": \"\",\n  \"Name\": \"\",\n  \"Location\": \"Vijay Nagar\",\n  \"budget\": \"\",\n  \"property_type\": \"2BHK Flat\",\n  \"timeline\": \"\",\n  \"call_timing\": \"\",\n  \"lead_score\": \"warm\"\n}\n\n--------------------------------------------------\n\nExample 2\n\nUser:\n\"Need flat on rent\"\n\nOutput:\n{\n  \"intent\": \"rent\",\n  \"stage\": \"qualifying\",\n  \"reply\": \"Sure 🙂 Which area in Indore are you looking for?\",\n  \"Number\": \"\",\n  \"Name\": \"\",\n  \"Location\": \"\",\n  \"budget\": \"\",\n  \"property_type\": \"Flat\",\n  \"timeline\": \"\",\n  \"call_timing\": \"\",\n  \"lead_score\": \"warm\"\n}\n\n--------------------------------------------------\n\nExample 3\n\nUser:\n\"Please call me after 7 PM\"\n\nOutput:\n{\n  \"intent\": \"buy\",\n  \"stage\": \"ready\",\n  \"reply\": \"Perfect 🙂 We will call you after 7 PM. Thank you!\",\n  \"Number\": \"\",\n  \"Name\": \"\",\n  \"Location\": \"\",\n  \"budget\": \"\",\n  \"property_type\": \"\",\n  \"timeline\": \"\",\n  \"call_timing\": \"After 7 PM\",\n  \"lead_score\": \"hot\"\n}\n\n--------------------------------------------------\n\nExample 4\n\nUser:\n\"Hi\"\n\nOutput:\n{\n  \"intent\": \"buy\",\n  \"stage\": \"ready\",\n  \"reply\": \"Perfect 🙂 We'll call you after 7 PM. Thank you!\",\n  \"Number\": \"9876543210\",\n  \"Name\": \"Rahul Sharma\",\n  \"Location\": \"Vijay Nagar\",\n  \"budget\": \"80 lakh\",\n  \"property_type\": \"2BHK Flat\",\n  \"timeline\": \"Within 1 month\",\n  \"call_timing\": \"After 7 PM\",\n  \"lead_score\": \"hot\"\n}\n\n--------------------------------------------------\nFINAL RULE\n--------------------------------------------------\n\nReturn ONLY valid parsable JSON.\ngive me outparcel for this and also give coloum for my google sheet\n\n\nOutput formate-\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -5280,
+        384
+      ],
+      "id": "7be367a1-f703-4ec5-aef8-f911bb44919d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "c9306ffeef47e43bb7ea447c370da3ddb910c98474f3b2d46698051b83cfecb6@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Client Visit"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -5040,
+        768
+      ],
+      "id": "ad9e4c9e-211a-4ab0-a417-5554ad2326b1",
+      "name": "Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YQNcjAmx8XtwPB07",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0ff9bf4a-8435-40fb-9842-8b3b120239fd",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "buy",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5391e8b5-2722-41b6-abe0-eac3e98826d3",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "sell",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "66c15f74-895f-4510-9d8b-91026be2f011",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "= rent_out",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6c4c0994-365e-4d94-89e5-4925a07eae46",
+                    "leftValue": "={{ $json.output?.intent || $json.intent }}",
+                    "rightValue": "rent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "91ac79ae-46c2-4006-98e1-854ddfec606e",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "=follow_up",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -4720,
+        336
+      ],
+      "id": "60024716-3e7f-426f-987f-a8e14426f3f2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"intent\": \"buy\",\n  \"stage\": \"ready\",\n  \"reply\": \"Perfect 🙂 We'll call you after 7 PM. Thank you!\",\n  \"Number\": \"9876543210\",\n  \"Name\": \"Rahul Sharma\",\n  \"Location\": \"Vijay Nagar\",\n  \"budget\": \"80 lakh\",\n  \"property_type\": \"2BHK Flat\",\n  \"timeline\": \"Within 1 month\",\n  \"call_timing\": \"After 7 PM\",\n  \"lead_score\": \"hot\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -4864,
+        768
+      ],
+      "id": "1fa65453-ca17-4f37-9079-cde99011c16d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        48
+      ],
+      "id": "edb50f00-2112-49f6-beec-d7f12df12e38",
+      "name": "Wait",
+      "webhookId": "6ec43a48-f392-4981-bb3d-a84b9093a004"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4336,
+        224
+      ],
+      "id": "8907b44f-7bbf-482c-8004-32015dce522d",
+      "name": "Send message2",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4336,
+        400
+      ],
+      "id": "7a18783c-5a7a-47e8-95b7-3b80f6050d4e",
+      "name": "Send message3",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4336,
+        784
+      ],
+      "id": "0bb8dc2d-4d13-42d4-967e-27156a87ef0a",
+      "name": "Send message4",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4336,
+        592
+      ],
+      "id": "54fbbd95-fa68-4e3d-9e6f-3723622ee150",
+      "name": "Send message5",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 121804041,
+          "mode": "list",
+          "cachedResultName": "Sell Flat",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=121804041"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $('Edit Fields').item.json.Number }}",
+            "Intent": "={{ $('AI Agent').item.json.output.intent }}",
+            "Location": "={{ $('AI Agent').item.json.output.Location }}",
+            "lastUserMessageTime": "={{ $('Edit Fields').item.json.lastUserMessageTime }}",
+            "Name": "={{ $('Edit Fields').item.json['Client name'] }}",
+            "Lead Score": "={{ $('AI Agent').item.json.output.lead_score }}",
+            "Property Type": "={{ $('AI Agent').item.json.output.property_type }}",
+            "Budget": "={{ $('AI Agent').item.json.output.budget }}",
+            "Call Timing": "={{ $('AI Agent').item.json.output.call_timing }}",
+            "Status": "={{ $('AI Agent').item.json.output.stage }}",
+            "Date": "={{ $json.formattedDate }}"
+          },
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Property Type",
+              "displayName": "Property Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Call Timing",
+              "displayName": "Call Timing",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastUserMessageTime",
+              "displayName": "lastUserMessageTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3792,
+        224
+      ],
+      "id": "754dd52a-948d-4c85-a8d0-1c559e6cce7b",
+      "name": "Sell Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 374772143,
+          "mode": "list",
+          "cachedResultName": "Rent out",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=374772143"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $('Edit Fields').item.json.Number }}",
+            "Intent": "={{ $('AI Agent').item.json.output.intent }}",
+            "Location": "={{ $('AI Agent').item.json.output.Location }}",
+            "lastUserMessageTime": "={{ $('Edit Fields').item.json.lastUserMessageTime }}",
+            "Name": "={{ $('Edit Fields').item.json['Client name'] }}",
+            "Lead Score": "={{ $('AI Agent').item.json.output.lead_score }}",
+            "Property Type": "={{ $('AI Agent').item.json.output.property_type }}",
+            "Budget": "={{ $('AI Agent').item.json.output.budget }}",
+            "Call Timing": "={{ $('AI Agent').item.json.output.call_timing }}",
+            "Status": "={{ $('AI Agent').item.json.output.stage }}",
+            "Date": "={{ $json.formattedDate }}"
+          },
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Property Type",
+              "displayName": "Property Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Call Timing",
+              "displayName": "Call Timing",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastUserMessageTime",
+              "displayName": "lastUserMessageTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3792,
+        400
+      ],
+      "id": "bdbefa7a-de8d-48bf-afcf-79caf0ab473a",
+      "name": "Rent_out",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        400
+      ],
+      "id": "e4dec8a8-c4a6-4256-ac66-8e6be0da8a2f",
+      "name": "Wait2",
+      "webhookId": "6ec43a48-f392-4981-bb3d-a84b9093a004"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        592
+      ],
+      "id": "a7ffcb7b-d523-48d5-b89c-9fe325dab8ec",
+      "name": "Wait3",
+      "webhookId": "6ec43a48-f392-4981-bb3d-a84b9093a004"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "=Hi, just checking — are you still looking to sell the property in Indore?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2688,
+        208
+      ],
+      "id": "9d078cdc-b7d5-4b66-88a6-52dbdf3e71fa",
+      "name": "Send message6",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "=Hi, just checking — are you still looking to buy the property ?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2688,
+        32
+      ],
+      "id": "5307d4bf-2e7e-4a40-bce0-5f1dd81d7232",
+      "name": "Send message",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "=Hi, just checking — are you still looking to rent- out the property in Indore?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2688,
+        400
+      ],
+      "id": "24f56c92-f516-4fab-a872-87e87b311653",
+      "name": "Send message7",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "=Hi, just checking — are you still looking for a property in Indore?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2688,
+        576
+      ],
+      "id": "8f5a7f09-2bda-4f1c-94e4-ba21b5384e9a",
+      "name": "Send message8",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1682617635,
+          "mode": "list",
+          "cachedResultName": "Rent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=1682617635"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+            "Location": "={{ $('AI Agent').item.json.output.Location }}",
+            "Intent": "={{ $('AI Agent').item.json.output.intent }}",
+            "lastUserMessageTime": "={{ $now }}",
+            "Name": "={{ $('Edit Fields').item.json['Client name'] }}",
+            "Lead Score": "={{ $('AI Agent').item.json.output.lead_score }}",
+            "Property Type": "={{ $('AI Agent').item.json.output.property_type }}",
+            "Budget": "={{ $('AI Agent').item.json.output.budget }}",
+            "Call Timing": "={{ $('AI Agent').item.json.output.call_timing }}",
+            "Status": "={{ $('AI Agent').item.json.output.stage }}",
+            "Date": "={{ $json.formattedDate }}"
+          },
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Property Type",
+              "displayName": "Property Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Call Timing",
+              "displayName": "Call Timing",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastUserMessageTime",
+              "displayName": "lastUserMessageTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3792,
+        592
+      ],
+      "id": "325953b9-4a4d-4177-ba56-1b74f5719087",
+      "name": "Rent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3e283ba4-42a5-4a99-a442-c6773c6f3537",
+              "leftValue": "={{ $now.toMillis() - new Date($json.lastUserMessageTime).getTime() > 60000 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2992,
+        224
+      ],
+      "id": "2f4ce5ec-7ff3-4954-8b62-e1d4497da02c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        224
+      ],
+      "id": "33e45987-950e-4ce2-9d28-14b89e9704bb",
+      "name": "Wait1",
+      "webhookId": "08a8ca6c-531a-4e33-a2b5-8491023a34b3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3e283ba4-42a5-4a99-a442-c6773c6f3537",
+              "leftValue": "={{ $now.toMillis() - new Date($json.lastUserMessageTime).getTime() > 60000 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2992,
+        48
+      ],
+      "id": "23c1cba2-ab5a-43ad-b6fc-b71c7ba8ee07",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3e283ba4-42a5-4a99-a442-c6773c6f3537",
+              "leftValue": "={{ $now.toMillis() - new Date($json.lastUserMessageTime).getTime() > 60000 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2992,
+        400
+      ],
+      "id": "503eee15-1de8-4282-915c-07d8cd8d711f",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3e283ba4-42a5-4a99-a442-c6773c6f3537",
+              "leftValue": "={{ $now.toMillis() - new Date($json.lastUserMessageTime).getTime() > 60000 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2976,
+        592
+      ],
+      "id": "5fd62f85-136b-46fc-a95d-3dd3395ea572",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f850e7fa-b0c2-400f-a833-3e98561dc3ee",
+              "leftValue": "={{ $json.output.intent }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "10d0e9f4-a409-4d47-a1c1-97ea7cc275a4",
+              "leftValue": "={{ $json.output.intent }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4960,
+        368
+      ],
+      "id": "a4442cb6-257b-4e16-a0e5-732d34e51c28",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1113243401872354",
+        "recipientPhoneNumber": "={{ $('Edit Fields').item.json.Number }}",
+        "textBody": "={{ $('AI Agent').item.json.output.reply }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -4720,
+        160
+      ],
+      "id": "5d73cf1c-612e-44eb-9fc1-87f822c65096",
+      "name": "Send message9",
+      "webhookId": "f30b76e7-ebcb-49cf-992b-cf8b0d0e3425",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Lii6Vj81P653nxXn",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Buy Flat",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "lastUserMessageTime",
+              "lookupValue": "={{ $json.lastUserMessageTime }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3248,
+        48
+      ],
+      "id": "65f1073d-6f23-40f3-b950-afea5011f261",
+      "name": "Get row(s) buy",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 121804041,
+          "mode": "list",
+          "cachedResultName": "Sell Flat",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=121804041"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "lastUserMessageTime",
+              "lookupValue": "={{ $json.lastUserMessageTime }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3248,
+        224
+      ],
+      "id": "7391421b-2acd-4c3a-b2c4-8ffc3558c2b5",
+      "name": "Get row(s) sell",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 374772143,
+          "mode": "list",
+          "cachedResultName": "Rent out",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=374772143"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "lastUserMessageTime",
+              "lookupValue": "={{ $json.lastUserMessageTime }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3232,
+        400
+      ],
+      "id": "0f7fb694-7db7-4728-b084-754e89af4988",
+      "name": "Get row(s) Rent_out",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1682617635,
+          "mode": "list",
+          "cachedResultName": "Rent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=1682617635"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "lastUserMessageTime",
+              "lookupValue": "={{ $json.lastUserMessageTime }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3248,
+        592
+      ],
+      "id": "aa8bd6ff-6d5b-45a5-844f-3a354d20079a",
+      "name": "Get row(s) Rent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $now }}",
+        "format": "custom",
+        "customFormat": "dd/MM/yyyy - hh:mm a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -4064,
+        592
+      ],
+      "id": "c7040842-c5fc-4333-8514-65b077ef7f42",
+      "name": "Date & Time1"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $now }}",
+        "format": "custom",
+        "customFormat": "dd/MM/yyyy - hh:mm a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -4064,
+        400
+      ],
+      "id": "fe4ef88b-aa28-4706-a271-f4f9077167cb",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $now }}",
+        "format": "custom",
+        "customFormat": "dd/MM/yyyy - hh:mm a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -4064,
+        224
+      ],
+      "id": "fa1bf756-b05d-4ac1-b5f6-3a512f89728c",
+      "name": "Date & Time2"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $now }}",
+        "format": "custom",
+        "customFormat": "dd/MM/yyyy - hh:mm a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -4064,
+        48
+      ],
+      "id": "bfa90bf1-6384-4dd0-a142-6eb46c182d1e",
+      "name": "Date & Time3"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU",
+          "mode": "list",
+          "cachedResultName": "LEADS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Buy Flat",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyO8xcovoR1I6UvOPBvl1MV3mlQf91P51mStCAmL-pU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $('Edit Fields').item.json.Number }}",
+            "Intent": "={{ $('AI Agent').item.json.output.intent }}",
+            "Location": "={{ $('AI Agent').item.json.output.Location }}",
+            "lastUserMessageTime": "={{ $('Edit Fields').item.json.lastUserMessageTime }}",
+            "Status": "={{ $('AI Agent').item.json.output.stage }}",
+            "Call Timing": "={{ $('AI Agent').item.json.output.call_timing }}",
+            "Budget": "={{ $('AI Agent').item.json.output.budget }}",
+            "Property Type": "={{ $('AI Agent').item.json.output.property_type }}",
+            "Lead Score": "={{ $('AI Agent').item.json.output.lead_score }}",
+            "Name": "={{ $('Edit Fields').item.json['Client name'] }}",
+            "Date": "={{ $json.formattedDate }}"
+          },
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Property Type",
+              "displayName": "Property Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Call Timing",
+              "displayName": "Call Timing",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastUserMessageTime",
+              "displayName": "lastUserMessageTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3792,
+        48
+      ],
+      "id": "c98a2e58-c4f3-4ab0-8c87-0d66d0b4b30c",
+      "name": "Buy Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ybroJx5JRH2SchI2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "                                                        \n* Add the google calendar prompt  \nin Ai Agent\n* Add multiple condition of followup like hot leads cold leads followup count , next followup , deal status\n\n* For advance add (Later )-\nCRON Workflow\n↓\nCheck inactive leads\n↓\nBulk follow-up",
+        "height": 240,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5424,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "9bd2a330-f9ce-4f45-b4c3-acd97bd604e6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -5424,
+        592
+      ],
+      "id": "b7cf2f8c-215a-4413-aba4-4ae1549c5399",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WjNiEyRCCTc4EdiZ",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message1": {
+      "main": [
+        [
+          {
+            "node": "Date & Time3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) buy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message2": {
+      "main": [
+        [
+          {
+            "node": "Date & Time2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message3": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message5": {
+      "main": [
+        [
+          {
+            "node": "Date & Time1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sell Sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rent_out": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) Rent_out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) Rent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rent": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send message6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) sell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Send message7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Send message8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Send message9",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) buy": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) sell": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) Rent_out": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) Rent": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time1": {
+      "main": [
+        [
+          {
+            "node": "Rent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Rent_out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time3": {
+      "main": [
+        [
+          {
+            "node": "Buy Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time2": {
+      "main": [
+        [
+          {
+            "node": "Sell Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buy Sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0ed68cc7-6f19-4bd5-923b-b3b63599782d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a22e6819a3838cddfc96cdc26bc10fe0e0abbbe27b9aaeee8187c8de33c9b23"
+  },
+  "id": "zYPoCn7a65AycFEl",
+  "tags": []
+}
