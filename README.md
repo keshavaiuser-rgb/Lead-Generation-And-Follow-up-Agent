@@ -103,7 +103,7 @@ Get row from Google Sheets (check lastUserMessageTime)
 If: Has user been silent for > 60 seconds?
   ├── YES → Send follow-up WhatsApp nudge
   └── NO  → Do nothing (conversation still active)
-```
+``
 
 ---
 
