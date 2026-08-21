@@ -2,7 +2,7 @@ This n8n workflow turns WhatsApp into a fully automated real estate lead generat
 Every qualified lead is automatically saved to the right tab in a Google Sheets spreadsheet (Buy Flat / Sell Flat / Rent out / Rent) with a lead score and stage. If a prospect stops responding, the agent waits and then sends a personalised follow-up nudge per their intent. Ready leads can also trigger a Google Calendar booking for a site visit.
 
 # 🏠 Lead Generation & Follow-Up Agent
-### Real Estate WhatsApp AI Bot — Indore, Madhya Pradesh
+### Real Estate WhatsApp AI Bot — Indore, Madhya Pradesh 
 
 ---
 
